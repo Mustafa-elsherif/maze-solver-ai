@@ -16,7 +16,7 @@ TEAM AGREEMENT:
     - Output: X (feature matrix), y (labels), positions (for debugging)
 """
 
-from feature_extractor import extract_features
+from risk_prediction.feature_extractor import extract_features
 
 
 def is_risky_cell(maze, row, col, danger_radius=2):
