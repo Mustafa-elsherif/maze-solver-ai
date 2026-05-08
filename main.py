@@ -3,28 +3,17 @@ main.py
 =======
 Maze Solver AI — CET251 Course Project
 El Sewedy University of Technology
-
-This file integrates all 5 parts:
-    Person 1 → maze definitions
-    Person 2 → search algorithms
-    Person 3 → agent simulation
-    Person 4 → visualization
-    Person 5 → risk prediction
 """
 
 from maze.maze_definitions       import (MAZE_EASY,   START_EASY,   GOAL_EASY,
                                           MAZE_MEDIUM, START_MEDIUM, GOAL_MEDIUM,
                                           MAZE_HARD,   START_HARD,   GOAL_HARD)
 from maze.maze_utils              import print_maze, count_traps
-
 from algorithms.bfs               import bfs
 from algorithms.dfs               import dfs
 from algorithms.astar             import astar
-
 from agent.agent                  import run_simulation
-
-from visualization.visualizer     import visualize, visualize_comparison, visualize_risk_heatmap
-
+from visualization.visualizer     import visualize_comparison, visualize_risk_heatmap
 from risk_prediction.risk_predictor import (predict_risk,
                                              predict_risk_for_entire_maze,
                                              initialize_predictor)
@@ -40,24 +29,19 @@ def run_full_demo(maze, start, goal, difficulty="Easy"):
     print(f"  Start : {start}  →  Goal: {goal}")
     print()
 
-    # ── Print maze ──────────────────────────────────────
     print("Maze:")
     print_maze(maze)
     print()
 
-    # ── Train risk model ────────────────────────────────
     print("Training risk prediction model...")
     initialize_predictor([MAZE_EASY, MAZE_MEDIUM, MAZE_HARD])
     print()
 
-    # ── Run all 3 algorithms ────────────────────────────
     results = {}
-    sim_results = {}
-
     for name, algo in [("BFS", bfs), ("DFS", dfs), ("A*", astar)]:
         algo_result, sim_result = run_simulation(maze, start, goal, algo)
-        results[name]     = algo_result
-        sim_results[name] = sim_result
+        results[name] = algo_result
+        results[name]["traps_hit"] = sim_result["hit_traps"]
 
         path = algo_result["path"]
         if path:
@@ -68,7 +52,6 @@ def run_full_demo(maze, start, goal, difficulty="Easy"):
         else:
             print(f"  ❌ {name:4s} → No path found")
 
-    # ── Risk prediction for best path ───────────────────
     print()
     print("Risk scores along BFS path:")
     bfs_path = results["BFS"]["path"]
@@ -78,25 +61,54 @@ def run_full_demo(maze, start, goal, difficulty="Easy"):
             flag = "⚠️ " if risk > 0.6 else "✅"
             print(f"  {flag} {pos} → risk={risk:.2f}")
 
-    # ── Visualization ────────────────────────────────────
     print()
-    print("Showing visualizations...")
-
-    # Compare all algorithms
+    print("Opening visualization... (close window to continue)")
     visualize_comparison(maze, results)
 
-    # Risk heatmap
+    print("Opening risk heatmap...")
     risk_grid = predict_risk_for_entire_maze(maze)
-    visualize_risk_heatmap(maze, risk_grid, "BFS")
+    visualize_risk_heatmap(maze, risk_grid)
 
 
-if __name__ == "__main__":
+def main_menu():
+    print()
     print("╔══════════════════════════════════════╗")
     print("║   Maze Solver AI — CET251 Project    ║")
     print("║   El Sewedy University of Technology ║")
     print("╚══════════════════════════════════════╝")
 
-    # Run on all 3 mazes
-    run_full_demo(MAZE_EASY,   START_EASY,   GOAL_EASY,   "Easy")
-    run_full_demo(MAZE_MEDIUM, START_MEDIUM, GOAL_MEDIUM, "Medium")
-    run_full_demo(MAZE_HARD,   START_HARD,   GOAL_HARD,   "Hard")
+    mazes = {
+        "1": (MAZE_EASY,   START_EASY,   GOAL_EASY,   "Easy"),
+        "2": (MAZE_MEDIUM, START_MEDIUM, GOAL_MEDIUM, "Medium"),
+        "3": (MAZE_HARD,   START_HARD,   GOAL_HARD,   "Hard"),
+        "4": None,
+    }
+
+    while True:
+        print()
+        print("  Select a maze to solve:")
+        print("  [1] Easy   Maze  (5×5)")
+        print("  [2] Medium Maze  (7×7)")
+        print("  [3] Hard   Maze  (9×9)")
+        print("  [4] Run ALL mazes")
+        print("  [0] Exit")
+        print()
+
+        choice = input("  Enter choice: ").strip()
+
+        if choice == "0":
+            print("  Goodbye! 👋")
+            break
+        elif choice in ("1", "2", "3"):
+            maze, start, goal, diff = mazes[choice]
+            run_full_demo(maze, start, goal, diff)
+        elif choice == "4":
+            for key in ("1", "2", "3"):
+                maze, start, goal, diff = mazes[key]
+                run_full_demo(maze, start, goal, diff)
+        else:
+            print("  ❌ Invalid choice, try again.")
+
+
+if __name__ == "__main__":
+    main_menu()
