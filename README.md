@@ -36,7 +36,7 @@ pip install -r requirements.txt
 ### 3. Run the project
 
 ```bash
-python main.py
+py -3.11 main.py
 ```
 
 ---
@@ -85,5 +85,6 @@ maze-solver-ai/
 
 * Python 3.x
 * scikit-learn
+* pygame
 * matplotlib
 * numpy
