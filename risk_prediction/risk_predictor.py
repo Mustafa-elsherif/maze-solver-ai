@@ -24,9 +24,9 @@ TEAM AGREEMENT:
 
 import os
 
-from feature_extractor  import extract_features
-from dataset_generator  import generate_dataset
-from risk_model         import train_model, load_model
+from risk_prediction.feature_extractor import extract_features
+from risk_prediction.dataset_generator import generate_dataset
+from risk_prediction.risk_model        import train_model, load_model
 
 _DEFAULT_TRAINING_MAZES = [
     [
