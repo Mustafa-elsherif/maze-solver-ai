@@ -8,7 +8,7 @@ Person 3 imports like this:
     from risk_prediction.risk_predictor import predict_risk
 """
 
-from risk_predictor import predict_risk, predict_risk_for_entire_maze, initialize_predictor
+from risk_prediction.risk_predictor import predict_risk, predict_risk_for_entire_maze, initialize_predictor
 
 __all__ = [
     "predict_risk",
