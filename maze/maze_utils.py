@@ -7,7 +7,7 @@ CET251 Maze Solver Project
 Helper functions used by the whole team.
 """
 
-from maze_definitions import (
+from maze.maze_definitions import (
     MAZE_EASY,  START_EASY,  GOAL_EASY,
     MAZE_MEDIUM, START_MEDIUM, GOAL_MEDIUM,
     MAZE_HARD,  START_HARD,  GOAL_HARD,
