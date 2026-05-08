@@ -13,7 +13,7 @@ from algorithms.bfs               import bfs
 from algorithms.dfs               import dfs
 from algorithms.astar             import astar
 from agent.agent                  import run_simulation
-from visualization.visualizer     import visualize_comparison, visualize_risk_heatmap
+from visualization.visualizer     import visualize_comparison
 from risk_prediction.risk_predictor import (predict_risk,
                                              predict_risk_for_entire_maze,
                                              initialize_predictor)
@@ -63,11 +63,8 @@ def run_full_demo(maze, start, goal, difficulty="Easy"):
 
     print()
     print("Opening visualization... (close window to continue)")
-    visualize_comparison(maze, results)
-
-    print("Opening risk heatmap...")
     risk_grid = predict_risk_for_entire_maze(maze)
-    visualize_risk_heatmap(maze, risk_grid)
+    visualize_comparison(maze, results, risk_grid=risk_grid)
 
 
 def main_menu():
