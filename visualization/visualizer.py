@@ -9,7 +9,6 @@ Single-window UI:
   Tab 2 : Risk Heatmap          (AI risk scores per cell)
 """
 
-import sys
 import math
 import pygame
 
@@ -30,17 +29,16 @@ TAB_ACT     = ( 91,  94, 166)
 TAB_IDLE    = ( 50,  50,  80)
 
 RISK_COLORS = [
-    (  0, 200,  80),   # 0.0 → green
+    (  0, 200,  80),
     (120, 210,  50),
     (200, 220,   0),
     (255, 180,   0),
     (255, 100,   0),
-    (220,  30,  30),   # 1.0 → red
+    (220,  30,  30),
 ]
 
 
 def _lerp_color(t):
-    """Map t∈[0,1] → risk color."""
     t = max(0.0, min(1.0, t))
     idx = t * (len(RISK_COLORS) - 1)
     lo, hi = int(idx), min(int(idx) + 1, len(RISK_COLORS) - 1)
@@ -62,11 +60,9 @@ def _draw_maze(surface, maze, path, x0, y0, cell_px, title, font_sm, font_ti):
     rows, cols = len(maze), len(maze[0])
     path_set   = set(path) if path else set()
 
-    # title
     t = font_ti.render(title, True, TEXT_W)
     surface.blit(t, (x0 + (cols * cell_px - t.get_width()) // 2, y0 - 28))
 
-    # cells
     for r in range(rows):
         for c in range(cols):
             cell  = maze[r][c]
@@ -74,23 +70,19 @@ def _draw_maze(surface, maze, path, x0, y0, cell_px, title, font_sm, font_ti):
             rect  = pygame.Rect(x0 + c * cell_px, y0 + r * cell_px, cell_px, cell_px)
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, PANEL_BG, rect, 1)
-
             if cell in ('S', 'G', 'T'):
                 lbl = font_sm.render(str(cell), True,
                                      (0, 0, 0) if cell == 'G' else TEXT_W)
                 surface.blit(lbl, lbl.get_rect(center=rect.center))
 
-    # arrows along path
     if path and len(path) > 1:
         for i in range(len(path) - 1):
-            r1, c1 = path[i]
-            r2, c2 = path[i + 1]
+            r1, c1 = path[i];  r2, c2 = path[i + 1]
             cx1 = x0 + c1 * cell_px + cell_px // 2
             cy1 = y0 + r1 * cell_px + cell_px // 2
             cx2 = x0 + c2 * cell_px + cell_px // 2
             cy2 = y0 + r2 * cell_px + cell_px // 2
             pygame.draw.line(surface, ARROW, (cx1, cy1), (cx2, cy2), 2)
-            # arrowhead
             angle = math.atan2(cy2 - cy1, cx2 - cx1)
             hs = cell_px * 0.28
             for da in (0.45, -0.45):
@@ -110,23 +102,17 @@ def _draw_heatmap(surface, maze, risk_grid, x0, y0, cell_px, font_sm, font_ti):
             val  = risk_grid[r][c]
             cell = maze[r][c]
             rect = pygame.Rect(x0 + c * cell_px, y0 + r * cell_px, cell_px, cell_px)
-
-            if cell == 1:
-                color = WALL
-            elif val < 0:
-                color = (60, 60, 60)
-            else:
-                color = _lerp_color(val)
-
+            if cell == 1:       color = WALL
+            elif val < 0:       color = (60, 60, 60)
+            else:               color = _lerp_color(val)
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, PANEL_BG, rect, 1)
-
             if cell in ('S', 'G', 'T'):
                 lbl = font_sm.render(str(cell), True, (0, 0, 0))
                 surface.blit(lbl, lbl.get_rect(center=rect.center))
             elif cell != 1 and val >= 0:
-                txt   = font_sm.render(f"{val:.1f}", True,
-                                       TEXT_W if val > 0.5 else (0, 0, 0))
+                txt = font_sm.render(f"{val:.1f}", True,
+                                     TEXT_W if val > 0.5 else (0, 0, 0))
                 surface.blit(txt, txt.get_rect(center=rect.center))
 
 
@@ -138,14 +124,13 @@ def _legend(surface, items, x, y, font):
         surface.blit(font.render(label, True, TEXT_W), (rx + 22, y + 1))
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
+# ── Public API ────────────────────────────────────────────────────────────────
 
 def visualize(maze, path, algorithm_name):
-    """Show a single maze + path (wraps visualize_comparison)."""
     visualize_comparison(maze, {algorithm_name: {"path": path, "nodes": 0, "time": 0}})
 
 
-def visualize_comparison(maze, results):
+def visualize_comparison(maze, results, risk_grid=None):
     pygame.init()
     rows, cols = len(maze), len(maze[0])
     n_algo     = len(results)
@@ -173,9 +158,6 @@ def visualize_comparison(maze, results):
     tab_idx = 0
     clock   = pygame.time.Clock()
 
-    # ── pre-compute risk grid placeholder (filled by visualize_risk_heatmap) ──
-    risk_grid_store = [None]
-
     def draw_tab_bar(active):
         tw = WIN_W // len(tabs)
         for i, name in enumerate(tabs):
@@ -187,7 +169,6 @@ def visualize_comparison(maze, results):
     def draw_comparison():
         screen.fill(BG)
         draw_tab_bar(0)
-
         algo_names = list(results.keys())
         for idx, name in enumerate(algo_names):
             res   = results[name]
@@ -195,53 +176,34 @@ def visualize_comparison(maze, results):
             nodes = res.get("nodes", 0)
             t     = res.get("time",  0.0)
             traps = res.get("traps_hit", 0)
-
             x0 = MARGIN + idx * (maze_w + MARGIN)
             y0 = TAB_H + MARGIN + 30
-
-            title = f"{name}"
-            _draw_maze(screen, maze, path, x0, y0, CELL, title, font_sm, font_ti)
-
-            # stats box
+            _draw_maze(screen, maze, path, x0, y0, CELL, name, font_sm, font_ti)
             sy = y0 + maze_h + 8
-            stats = [
-                f"Path : {len(path)} steps",
-                f"Nodes: {nodes}",
-                f"Time : {t:.5f}s",
-                f"Traps: {traps}",
-            ]
+            stats = [f"Path : {len(path)} steps",
+                     f"Nodes: {nodes}",
+                     f"Time : {t:.5f}s",
+                     f"Traps: {traps}"]
             for si, s in enumerate(stats):
                 col = TRAP if (si == 3 and traps > 0) else TEXT_G
                 lbl = font_ti.render(s, True, col)
                 screen.blit(lbl, (x0 + (maze_w - lbl.get_width()) // 2,
                                   sy + si * 13))
-
-        # legend
-        leg_items = [
-            (EMPTY, "Empty"), (WALL, "Wall"), (TRAP, "Trap"),
-            (START, "Start"), (GOAL, "Goal"), (PATH, "Path"),
-        ]
+        leg_items = [(EMPTY,"Empty"),(WALL,"Wall"),(TRAP,"Trap"),
+                     (START,"Start"),(GOAL,"Goal"),(PATH,"Path")]
         total_w = len(leg_items) * 110
-        lx = (WIN_W - total_w) // 2
-        ly = WIN_H - LEG_H - 4
-        _legend(screen, leg_items, lx, ly, font_ti)
+        _legend(screen, leg_items, (WIN_W - total_w) // 2, WIN_H - LEG_H - 4, font_ti)
 
     def draw_heatmap():
         screen.fill(BG)
         draw_tab_bar(1)
-
-        if risk_grid_store[0] is None:
-            msg = font_lg.render("Run the program once — heatmap loads automatically",
-                                 True, TEXT_W)
+        if risk_grid is None:
+            msg = font_lg.render("No risk data available", True, TEXT_W)
             screen.blit(msg, msg.get_rect(center=(WIN_W // 2, WIN_H // 2)))
             return
-
-        rg = risk_grid_store[0]
         x0 = (WIN_W - maze_w) // 2
         y0 = TAB_H + MARGIN + 30
-        _draw_heatmap(screen, maze, rg, x0, y0, CELL, font_sm, font_ti)
-
-        # color scale bar
+        _draw_heatmap(screen, maze, risk_grid, x0, y0, CELL, font_sm, font_ti)
         bar_w, bar_h = 200, 16
         bx = (WIN_W - bar_w) // 2
         by = WIN_H - LEG_H + 4
@@ -277,67 +239,4 @@ def visualize_comparison(maze, results):
 
 
 def visualize_risk_heatmap(maze, risk_grid, algorithm_name=""):
-    """
-    Called from main.py — stores the grid then opens the window on Tab 2.
-    Re-uses visualize_comparison with an injected grid.
-    """
-    pygame.init()
-    rows, cols = len(maze), len(maze[0])
-
-    CELL   = max(36, min(80, 500 // max(rows, cols)))
-    MARGIN = 60
-    TAB_H  = 44
-    LEG_H  = 40
-
-    maze_w = cols * CELL
-    maze_h = rows * CELL
-    WIN_W  = max(600, MARGIN * 2 + maze_w * 2 + MARGIN)
-    WIN_H  = TAB_H + MARGIN + 30 + maze_h + LEG_H + MARGIN
-
-    screen = pygame.display.set_mode((WIN_W, WIN_H))
-    pygame.display.set_caption("Maze Solver AI — Risk Heatmap")
-
-    font_sm = pygame.font.SysFont("segoeui", max(9, CELL // 4), bold=True)
-    font_ti = pygame.font.SysFont("segoeui", 13, bold=True)
-    font_md = pygame.font.SysFont("segoeui", 14, bold=True)
-
-    clock = pygame.time.Clock()
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
-
-        screen.fill(BG)
-
-        # header
-        lbl = font_md.render("Risk Heatmap — AI Prediction   (ESC to close)",
-                             True, TEXT_W)
-        screen.blit(lbl, lbl.get_rect(center=(WIN_W // 2, TAB_H // 2)))
-
-        # maze layout (left)
-        x_left = MARGIN
-        y0     = TAB_H + MARGIN + 30
-        _draw_maze(screen, maze, [], x_left, y0, CELL, "Maze Layout", font_sm, font_ti)
-
-        # heatmap (right)
-        x_right = MARGIN * 2 + maze_w
-        _draw_heatmap(screen, maze, risk_grid, x_right, y0, CELL, font_sm, font_ti)
-
-        # color bar
-        bar_w, bar_h = 220, 14
-        bx = (WIN_W - bar_w) // 2
-        by = WIN_H - LEG_H + 4
-        for i in range(bar_w):
-            pygame.draw.line(screen, _lerp_color(i / bar_w),
-                             (bx + i, by), (bx + i, by + bar_h))
-        pygame.draw.rect(screen, ACCENT, (bx, by, bar_w, bar_h), 1)
-        screen.blit(font_ti.render("Safe 0.0", True, TEXT_G), (bx - 58, by + 1))
-        screen.blit(font_ti.render("Danger 1.0", True, TRAP),  (bx + bar_w + 4, by + 1))
-
-        pygame.display.flip()
-        clock.tick(30)
-
-    pygame.quit()
+    pass
